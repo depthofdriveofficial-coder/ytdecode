@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- ═══ PRIMARY SEO ═══ -->
+  <title>YTDecode — Free YouTube Transcript, Tags & SEO Extractor Tool</title>
+  <meta name="description" content="Extract YouTube video transcript, tags, description and thumbnail for free. Generate an AI master prompt to create better competing YouTube content. 100% free YouTube SEO tool."/>
+  <meta name="keywords" content="youtube transcript extractor, youtube tags extractor, youtube SEO tool, youtube description extractor, youtube competitor analysis, free youtube tool, extract youtube transcript, youtube video analyzer"/>
+  <meta name="author" content="YTDecode"/>
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+  <link rel="canonical" href="https://ytdecode.vercel.app/"/>
+
+  <!-- ═══ OPEN GRAPH ═══ -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="YTDecode — Free YouTube SEO Extractor & Competitor Analysis Tool"/>
+  <meta property="og:description" content="Extract transcript, tags, description & thumbnail from any YouTube video. Get an AI master prompt to outrank competitors. 100% free."/>
+  <meta property="og:url" content="https://ytdecode.vercel.app/"/>
+  <meta property="og:site_name" content="YTDecode"/>
+  <meta property="og:image" content="https://ytdecode.vercel.app/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:locale" content="en_US"/>
+
+  <!-- ═══ TWITTER CARD ═══ -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="YTDecode — Free YouTube SEO Extractor Tool"/>
+  <meta name="twitter:description" content="Extract YouTube transcript, tags, description & thumbnail. Generate AI master prompt to outrank competitors. Free tool."/>
+  <meta name="twitter:image" content="https://ytdecode.vercel.app/og-image.png"/>
+
+  <!-- ═══ SCHEMA MARKUP ═══ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://ytdecode.vercel.app/#website",
+        "url": "https://ytdecode.vercel.app/",
+        "name": "YTDecode",
+        "description": "Free YouTube SEO Extractor and Competitor Analysis Tool",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://ytdecode.vercel.app/?url={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://ytdecode.vercel.app/#app",
+        "name": "YTDecode",
+        "url": "https://ytdecode.vercel.app/",
+        "description": "Extract YouTube video transcript, tags, description and thumbnail. Generate AI master prompt for competitor analysis.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "YouTube Transcript Extractor",
+          "YouTube Tags Extractor",
+          "YouTube Description Extractor",
+          "YouTube Thumbnail Downloader",
+          "AI Master Prompt Generator",
+          "YouTube Competitor Analysis"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://ytdecode.vercel.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I extract a YouTube video transcript for free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Paste any YouTube video URL into YTDecode and click Analyze Video. The full transcript will be extracted automatically and available to copy for free."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I download YouTube video thumbnails?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! YTDecode extracts all thumbnail sizes (Max Resolution, Standard, High, Medium) from any YouTube video. You can download them directly with one click."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does the YouTube tags extractor work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "YTDecode uses the YouTube Data API to extract the hidden tags from any public YouTube video. Just paste the URL and all tags are shown instantly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the AI Master Prompt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The AI Master Prompt bundles all extracted video data (title, tags, description, transcript) into a ready-to-use prompt. Paste it into ChatGPT, Claude, Gemini or DeepSeek to generate better titles, tags, descriptions and a full video script."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is YTDecode free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, YTDecode is completely free. No signup, no credit card, no limits. Just paste a YouTube URL and analyze."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://ytdecode.vercel.app/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --yt-red: #ff0000;
+      --yt-red-dark: #cc0000;
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #212121;
+      --border: #303030;
+      --text: #f1f1f1;
+      --muted: #aaaaaa;
+      --white: #ffffff;
+      --green: #00c853;
+      --radius: 12px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+    /* NAV */
+    nav { background: #212121; border-bottom: 1px solid var(--border); padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .logo-icon { background: var(--yt-red); border-radius: 8px; width: 36px; height: 26px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 18px; height: 18px; fill: white; }
+    .logo-text { font-size: 1.2rem; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
+    .logo-text span { color: var(--yt-red); }
+    .nav-badge { background: var(--yt-red); color: white; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 60px 20px 40px; max-width: 800px; margin: 0 auto; }
+    .hero-tag { display: inline-block; background: rgba(255,0,0,0.15); border: 1px solid rgba(255,0,0,0.3); color: var(--yt-red); font-size: 0.75rem; font-weight: 600; padding: 5px 14px; border-radius: 20px; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
+    .hero h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.5px; margin-bottom: 16px; color: var(--white); }
+    .hero h1 span { color: var(--yt-red); }
+    .hero p { color: var(--muted); font-size: 1rem; line-height: 1.7; max-width: 580px; margin: 0 auto 40px; }
+
+    /* SEARCH */
+    .search-wrapper { max-width: 700px; margin: 0 auto 20px; padding: 0 20px; }
+    .search-box { display: flex; background: var(--surface2); border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.2s; }
+    .search-box:focus-within { border-color: var(--yt-red); }
+    .search-box input { flex: 1; background: transparent; border: none; outline: none; padding: 16px 20px; color: var(--text); font-family: 'Roboto', sans-serif; font-size: 0.95rem; min-width: 0; }
+    .search-box input::placeholder { color: var(--muted); }
+    .search-btn { background: var(--yt-red); border: none; color: white; padding: 16px 28px; font-family: 'Roboto', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+    .search-btn:hover { background: var(--yt-red-dark); }
+    .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* FEATURES */
+    .features { display: flex; flex-wrap: wrap; gap: 10px; max-width: 700px; margin: 0 auto 40px; padding: 0 20px; justify-content: center; }
+    .feature-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .feature-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--yt-red); flex-shrink: 0; }
+
+    /* ERROR */
+    .error-box { display: none; max-width: 700px; margin: 0 auto 20px; padding: 14px 20px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.3); border-radius: var(--radius); color: #ff6b6b; font-size: 0.9rem; }
+
+    /* LOADER */
+    .loader { display: none; text-align: center; padding: 60px 20px; }
+    .loader-spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--yt-red); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { color: var(--muted); font-size: 0.9rem; }
+
+    /* RESULTS */
+    .results { display: none; max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+    .video-header { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; display: flex; gap: 16px; align-items: flex-start; }
+    .video-thumbnail { width: 160px; min-width: 160px; height: 90px; border-radius: 8px; object-fit: cover; background: var(--surface2); }
+    .video-meta { flex: 1; min-width: 0; }
+    .video-title { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: 8px; line-height: 1.4; }
+    .video-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+    .stat-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+    .stat-chip strong { color: var(--text); }
+
+    /* SECTION CARDS */
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+    .section-header:hover { background: rgba(255,255,255,0.03); }
+    .section-title { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; color: var(--white); }
+    .section-icon { width: 32px; height: 32px; background: rgba(255,0,0,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .section-actions { display: flex; align-items: center; gap: 8px; }
+    .copy-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer; font-family: 'Roboto', sans-serif; transition: all 0.2s; white-space: nowrap; }
+    .copy-btn:hover { border-color: var(--yt-red); color: var(--yt-red); }
+    .copy-btn.copied { background: var(--green); border-color: var(--green); color: #000; }
+    .chevron { color: var(--muted); font-size: 0.8rem; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+    .section-body { padding: 20px; }
+    .section-body.collapsed { display: none; }
+    .transcript-text { color: var(--muted); font-size: 0.88rem; line-height: 1.8; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+    .tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+    .description-text { color: var(--muted); font-size: 0.88rem; line-height: 1.8; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+    .thumbnail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .thumb-item { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: var(--surface2); }
+    .thumb-item img { width: 100%; height: auto; display: block; }
+    .thumb-info { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .thumb-label { font-size: 0.75rem; color: var(--muted); }
+    .download-btn { background: var(--yt-red); border: none; color: white; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: 'Roboto', sans-serif; text-decoration: none; display: inline-block; }
+    .download-btn:hover { background: var(--yt-red-dark); }
+
+    /* MASTER PROMPT */
+    .master-prompt-card { background: linear-gradient(135deg, rgba(255,0,0,0.08), rgba(255,0,0,0.03)); border: 1px solid rgba(255,0,0,0.25); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+    .master-prompt-header { padding: 20px; border-bottom: 1px solid rgba(255,0,0,0.2); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .master-prompt-title { display: flex; align-items: center; gap: 10px; }
+    .master-prompt-title h2 { font-size: 1rem; font-weight: 700; color: var(--white); }
+    .master-prompt-title p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .prompt-badge { background: var(--yt-red); color: white; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+    .master-prompt-body { padding: 20px; }
+    .prompt-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 0.82rem; line-height: 1.7; resize: vertical; min-height: 300px; outline: none; }
+    .prompt-textarea:focus { border-color: var(--yt-red); }
+    .prompt-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--yt-red); border: none; color: white; padding: 12px 24px; border-radius: 8px; font-family: 'Roboto', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+    .btn-primary:hover { background: var(--yt-red-dark); }
+    .btn-primary.copied { background: var(--green); color: #000; }
+    .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 8px; font-family: 'Roboto', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .btn-secondary:hover { border-color: var(--muted); }
+    .ai-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+    .ai-tool-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 0.75rem; color: var(--muted); }
+
+    /* HOW IT WORKS */
+    .how-section { max-width: 900px; margin: 0 auto 60px; padding: 0 20px; }
+    .how-section h2 { font-size: 1.5rem; font-weight: 700; color: var(--white); text-align: center; margin-bottom: 30px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+    .step-num { width: 40px; height: 40px; background: var(--yt-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; margin: 0 auto 12px; color: white; }
+    .step h3 { font-size: 0.9rem; font-weight: 600; color: var(--white); margin-bottom: 6px; }
+    .step p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    /* FAQ */
+    .faq-section { max-width: 900px; margin: 0 auto 60px; padding: 0 20px; }
+    .faq-section h2 { font-size: 1.5rem; font-weight: 700; color: var(--white); text-align: center; margin-bottom: 30px; }
+    .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+    .faq-q { padding: 16px 20px; font-size: 0.9rem; font-weight: 600; color: var(--white); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .faq-q:hover { background: rgba(255,255,255,0.03); }
+    .faq-a { padding: 0 20px 16px; font-size: 0.85rem; color: var(--muted); line-height: 1.7; display: none; }
+    .faq-a.open { display: block; }
+
+    /* FOOTER */
+    footer { background: var(--surface); border-top: 1px solid var(--border); text-align: center; padding: 24px 20px; color: var(--muted); font-size: 0.8rem; }
+    footer span { color: var(--yt-red); }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .video-header { flex-direction: column; }
+      .video-thumbnail { width: 100%; height: 180px; min-width: unset; }
+      .search-btn span { display: none; }
+      .search-btn { padding: 16px 18px; }
+      nav { padding: 0 16px; }
+      .hero { padding: 40px 16px 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/" aria-label="YTDecode Home">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+    </div>
+    <span class="logo-text">YT<span>Decode</span></span>
+  </a>
+  <div class="nav-badge">100% FREE</div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-tag">YouTube SEO Intelligence Tool</div>
+  <h1>Extract Any YouTube Video's<br/><span>SEO Data Instantly</span></h1>
+  <p>Get the full transcript, tags, description and thumbnail from any YouTube video — then generate an AI master prompt to create content that outranks the competition.</p>
+</header>
+
+<!-- SEARCH -->
+<div class="search-wrapper">
+  <div class="search-box" role="search">
+    <label for="videoUrl" style="display:none">YouTube Video URL</label>
+    <input type="url" id="videoUrl" placeholder="Paste YouTube video URL here — e.g. https://youtube.com/watch?v=..." aria-label="YouTube video URL"/>
+    <button class="search-btn" id="analyzeBtn" onclick="analyzeVideo()" aria-label="Analyze YouTube video">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <span>Analyze Video</span>
+    </button>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features" aria-label="Tool features">
+  <div class="feature-pill"><div class="dot"></div>Full Transcript</div>
+  <div class="feature-pill"><div class="dot"></div>Tags Extractor</div>
+  <div class="feature-pill"><div class="dot"></div>Description</div>
+  <div class="feature-pill"><div class="dot"></div>Thumbnail Download</div>
+  <div class="feature-pill"><div class="dot"></div>AI Master Prompt</div>
+  <div class="feature-pill"><div class="dot"></div>Video Stats</div>
+</div>
+
+<!-- ERROR -->
+<div class="error-box" id="errorBox" role="alert" aria-live="polite"></div>
+
+<!-- LOADER -->
+<div class="loader" id="loader" aria-live="polite">
+  <div class="loader-spinner" aria-hidden="true"></div>
+  <p>Analyzing video... please wait</p>
+</div>
+
+<!-- RESULTS -->
+<main class="results" id="results" aria-label="Video analysis results">
+
+  <div class="video-header" id="videoHeader"></div>
+
+  <!-- Transcript -->
+  <article class="section-card">
+    <div class="section-header" onclick="toggleSection('transcript')" role="button" aria-expanded="true" aria-controls="transcript">
+      <div class="section-title"><div class="section-icon" aria-hidden="true">📝</div>Full Transcript</div>
+      <div class="section-actions">
+        <button class="copy-btn" onclick="event.stopPropagation(); copyText('transcriptContent', this)" aria-label="Copy transcript">Copy</button>
+        <span class="chevron open" id="chevron-transcript" aria-hidden="true">▼</span>
+      </div>
+    </div>
+    <div class="section-body" id="transcript">
+      <div class="transcript-text" id="transcriptContent"></div>
+    </div>
+  </article>
+
+  <!-- Tags -->
+  <article class="section-card">
+    <div class="section-header" onclick="toggleSection('tags')" role="button" aria-expanded="true" aria-controls="tags">
+      <div class="section-title"><div class="section-icon" aria-hidden="true">🏷️</div>Video Tags</div>
+      <div class="section-actions">
+        <button class="copy-btn" onclick="event.stopPropagation(); copyText('tagsRaw', this)" aria-label="Copy all tags">Copy All</button>
+        <span class="chevron open" id="chevron-tags" aria-hidden="true">▼</span>
+      </div>
+    </div>
+    <div class="section-body" id="tags">
+      <div class="tags-container" id="tagsContainer"></div>
+      <div id="tagsRaw" style="display:none"></div>
+    </div>
+  </article>
+
+  <!-- Description -->
+  <article class="section-card">
+    <div class="section-header" onclick="toggleSection('description')" role="button" aria-expanded="true" aria-controls="description">
+      <div class="section-title"><div class="section-icon" aria-hidden="true">📄</div>Description</div>
+      <div class="section-actions">
+        <button class="copy-btn" onclick="event.stopPropagation(); copyText('descriptionContent', this)" aria-label="Copy description">Copy</button>
+        <span class="chevron open" id="chevron-description" aria-hidden="true">▼</span>
+      </div>
+    </div>
+    <div class="section-body" id="description">
+      <div class="description-text" id="descriptionContent"></div>
+    </div>
+  </article>
+
+  <!-- Thumbnails -->
+  <article class="section-card">
+    <div class="section-header" onclick="toggleSection('thumbnail')" role="button" aria-expanded="true" aria-controls="thumbnail">
+      <div class="section-title"><div class="section-icon" aria-hidden="true">🖼️</div>Thumbnails</div>
+      <div class="section-actions">
+        <span class="chevron open" id="chevron-thumbnail" aria-hidden="true">▼</span>
+      </div>
+    </div>
+    <div class="section-body" id="thumbnail">
+      <div class="thumbnail-grid" id="thumbnailGrid"></div>
+    </div>
+  </article>
+
+  <!-- Master Prompt -->
+  <section class="master-prompt-card" aria-label="AI Master Prompt">
+    <div class="master-prompt-header">
+      <div class="master-prompt-title">
+        <div class="section-icon" style="background:rgba(255,0,0,0.2)" aria-hidden="true">🤖</div>
+        <div>
+          <h2>AI Master Prompt <span class="prompt-badge">READY</span></h2>
+          <p>Copy & paste into ChatGPT, Claude, Gemini or DeepSeek to generate better content</p>
+        </div>
+      </div>
+    </div>
+    <div class="master-prompt-body">
+      <textarea class="prompt-textarea" id="masterPrompt" readonly aria-label="Master AI prompt"></textarea>
+      <div class="prompt-actions">
+        <button class="btn-primary" id="copyPromptBtn" onclick="copyMasterPrompt()">📋 Copy Master Prompt</button>
+        <a class="btn-secondary" id="watchBtn" href="#" target="_blank" rel="noopener noreferrer">▶ Watch on YouTube</a>
+      </div>
+      <div class="ai-tools">
+        <span style="font-size:0.75rem;color:var(--muted);margin-right:4px">Use with:</span>
+        <span class="ai-tool-badge">ChatGPT</span>
+        <span class="ai-tool-badge">Claude</span>
+        <span class="ai-tool-badge">Gemini</span>
+        <span class="ai-tool-badge">DeepSeek</span>
+        <span class="ai-tool-badge">Grok</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" aria-labelledby="how-heading">
+  <h2 id="how-heading">How YTDecode Works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Paste YouTube URL</h3>
+      <p>Copy any YouTube video URL and paste it into the search box above.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Click Analyze</h3>
+      <p>We instantly extract transcript, tags, description, thumbnail and video stats.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Get Master Prompt</h3>
+      <p>Copy the auto-generated AI prompt with all video data bundled inside.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Create Better Content</h3>
+      <p>Paste the prompt into ChatGPT, Claude or Gemini and get a full video script, better tags and SEO description.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" aria-labelledby="faq-heading">
+  <h2 id="faq-heading">Frequently Asked Questions</h2>
+
+  <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <div class="faq-q" onclick="toggleFaq(this)" role="button" aria-expanded="false" itemprop="name">How do I extract a YouTube video transcript for free? <span aria-hidden="true">+</span></div>
+    <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><span itemprop="text">Paste any YouTube video URL into YTDecode and click Analyze Video. The full word-by-word transcript is extracted automatically and available to copy — completely free, no signup required.</span></div>
+  </div>
+
+  <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <div class="faq-q" onclick="toggleFaq(this)" role="button" aria-expanded="false" itemprop="name">Can I see the hidden tags of any YouTube video? <span aria-hidden="true">+</span></div>
+    <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><span itemprop="text">Yes! YouTube hides video tags from viewers, but YTDecode uses the official YouTube Data API to extract and display all tags from any public video instantly.</span></div>
+  </div>
+
+  <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <div class="faq-q" onclick="toggleFaq(this)" role="button" aria-expanded="false" itemprop="name">Can I download YouTube video thumbnails? <span aria-hidden="true">+</span></div>
+    <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><span itemprop="text">Yes! YTDecode shows all available thumbnail sizes — Max Resolution (1280×720), Standard (640×480), High (480×360) and more. Download any size with one click.</span></div>
+  </div>
+
+  <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <div class="faq-q" onclick="toggleFaq(this)" role="button" aria-expanded="false" itemprop="name">What is the AI Master Prompt and how do I use it? <span aria-hidden="true">+</span></div>
+    <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><span itemprop="text">The AI Master Prompt is an advanced prompt that bundles all extracted video data — title, tags, description, transcript and stats — into a single ready-to-use prompt. Copy it and paste into ChatGPT, Claude, Gemini or DeepSeek to instantly generate better video titles, 40 optimized tags, an SEO description and a full competing video script.</span></div>
+  </div>
+
+  <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <div class="faq-q" onclick="toggleFaq(this)" role="button" aria-expanded="false" itemprop="name">Is YTDecode completely free? <span aria-hidden="true">+</span></div>
+    <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer"><span itemprop="text">Yes, 100% free. No account, no credit card, no daily limits. Just paste any YouTube URL and analyze instantly.</span></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 <span>YTDecode</span> — Free YouTube SEO Extractor Tool. Not affiliated with YouTube or Google.</p>
+</footer>
+
+<script>
+let videoData = {};
+
+function extractVideoId(url) {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/shorts\/([^&\n?#]+)/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+async function analyzeVideo() {
+  const url = document.getElementById('videoUrl').value.trim();
+  hideError();
+  if (!url) return showError('Please paste a YouTube video URL.');
+  const videoId = extractVideoId(url);
+  if (!videoId) return showError('Invalid YouTube URL. Please check and try again.');
+  setLoading(true);
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, video_id: videoId })
+    });
+    const data = await res.json();
+    if (!res.ok) return showError(data.detail || 'Something went wrong. Please try again.');
+    videoData = data;
+    renderResults(data);
+  } catch(e) {
+    showError('Connection error. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('videoHeader').innerHTML = `
+    <img class="video-thumbnail" src="${data.thumbnail_url || ''}" alt="Thumbnail of ${escHtml(data.title)}" loading="lazy" onerror="this.style.display='none'"/>
+    <div class="video-meta">
+      <div class="video-title">${escHtml(data.title || 'No title')}</div>
+      <div class="video-stats">
+        <div class="stat-chip">👁 <strong>${fmtNum(data.views)}</strong> views</div>
+        <div class="stat-chip">👍 <strong>${fmtNum(data.likes)}</strong> likes</div>
+        <div class="stat-chip">💬 <strong>${fmtNum(data.comments)}</strong> comments</div>
+        <div class="stat-chip">📅 <strong>${data.published || 'N/A'}</strong></div>
+        <div class="stat-chip">⏱ <strong>${data.duration || 'N/A'}</strong></div>
+        <div class="stat-chip">📺 <strong>${escHtml(data.channel || 'N/A')}</strong></div>
+      </div>
+    </div>`;
+
+  document.getElementById('transcriptContent').textContent = data.transcript || 'Transcript not available for this video.';
+  const tags = data.tags || [];
+  document.getElementById('tagsRaw').textContent = tags.join(', ');
+  document.getElementById('tagsContainer').innerHTML = tags.length
+    ? tags.map(t => `<span class="tag-chip">${escHtml(t)}</span>`).join('')
+    : '<span style="color:var(--muted);font-size:0.85rem">No tags found for this video.</span>';
+  document.getElementById('descriptionContent').textContent = data.description || 'No description available.';
+
+  const thumbs = data.thumbnails || [];
+  document.getElementById('thumbnailGrid').innerHTML = thumbs.map(th => `
+    <div class="thumb-item">
+      <img src="${th.url}" alt="YouTube thumbnail ${th.quality}" loading="lazy"/>
+      <div class="thumb-info">
+        <span class="thumb-label">${th.quality} (${th.width}×${th.height})</span>
+        <a class="download-btn" href="${th.url}" download target="_blank" rel="noopener">Download</a>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('watchBtn').href = `https://youtube.com/watch?v=${data.video_id}`;
+  document.getElementById('masterPrompt').value = generateMasterPrompt(data);
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function generateMasterPrompt(d) {
+  const tags = (d.tags || []).join(', ') || 'No tags available';
+  return `You are an expert YouTube SEO strategist and content creator. I want to create a video that outranks and outperforms the competitor video analyzed below.
+
+═══════════════════════════════════════════
+COMPETITOR VIDEO ANALYSIS
+═══════════════════════════════════════════
+
+TITLE: ${d.title || 'N/A'}
+VIEWS: ${fmtNum(d.views)}
+LIKES: ${fmtNum(d.likes)}
+COMMENTS: ${fmtNum(d.comments)}
+CHANNEL: ${d.channel || 'N/A'}
+PUBLISHED: ${d.published || 'N/A'}
+DURATION: ${d.duration || 'N/A'}
+VIDEO URL: https://youtube.com/watch?v=${d.video_id}
+
+───────────────────────────────────────────
+THEIR TAGS (${(d.tags||[]).length} tags):
+───────────────────────────────────────────
+${tags}
+
+───────────────────────────────────────────
+THEIR DESCRIPTION:
+───────────────────────────────────────────
+${d.description || 'No description available'}
+
+───────────────────────────────────────────
+THEIR FULL TRANSCRIPT:
+───────────────────────────────────────────
+${d.transcript || 'Transcript not available'}
+
+═══════════════════════════════════════════
+YOUR TASKS — DELIVER ALL OF THE FOLLOWING:
+═══════════════════════════════════════════
+
+1. VIDEO TITLE OPTIONS (provide 5 options)
+   - Each title MUST be under 100 characters (YouTube limit)
+   - More compelling and SEO-optimized than the competitor
+   - Include the primary keyword naturally
+   - Use power words that drive clicks
+
+2. OPTIMIZED TAGS (provide 30-40 tags)
+   - Total character count of all tags MUST stay under 500 characters (YouTube limit)
+   - Mix of broad, medium, and long-tail keywords
+   - Include competitor's best-performing tags + tags they missed
+
+3. SEO-OPTIMIZED DESCRIPTION
+   - MUST be under 5000 characters (YouTube limit)
+   - First 2-3 lines must be a strong hook (visible before "Show more")
+   - Include primary and secondary keywords naturally
+   - Add timestamps, links section and relevant hashtags
+   - End with a strong call-to-action
+
+4. COMPLETE VIDEO SCRIPT
+   - Hook (first 30 seconds) stronger than the competitor's
+   - Cover all competitor's points PLUS additional value
+   - Identify content gaps and fill them
+   - Natural CTAs throughout
+   - Engaging outro with subscribe prompt
+
+5. COMPETITIVE ADVANTAGE ANALYSIS
+   - What the competitor did well
+   - What they missed or did poorly
+   - Unique angle to differentiate my video
+   - Thumbnail concept that will outperform theirs
+
+6. THUMBNAIL TEXT SUGGESTIONS
+   - 3 options, max 4-5 words each
+   - Bold, high-contrast, readable at small size
+
+═══════════════════════════════════════════
+CRITICAL CONSTRAINTS:
+═══════════════════════════════════════════
+- Title: Maximum 100 characters
+- Description: Maximum 5000 characters
+- Tags: Total under 500 characters
+- Keep all video details in their ORIGINAL LANGUAGE (do not translate)
+- Goal: OUTRANK, not just match the competitor
+
+Start with the 5 title options, then proceed through all tasks.`;
+}
+
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const chevron = document.getElementById('chevron-' + id);
+  body.classList.toggle('collapsed');
+  chevron.classList.toggle('open');
+}
+
+function toggleFaq(el) {
+  const ans = el.nextElementSibling;
+  const isOpen = ans.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-q span').forEach(s => s.textContent = '+');
+  if (!isOpen) { ans.classList.add('open'); el.querySelector('span').textContent = '−'; }
+}
+
+function copyText(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.textContent || el.value;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied ✓'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyMasterPrompt() {
+  const text = document.getElementById('masterPrompt').value;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyPromptBtn');
+    btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copy Master Prompt'; btn.classList.remove('copied'); }, 2500);
+  });
+}
+
+function setLoading(on) {
+  document.getElementById('loader').style.display = on ? 'block' : 'none';
+  document.getElementById('results').style.display = 'none';
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '⏳ Analyzing...' : '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span>Analyze Video</span>';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠️ ' + msg; el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+function fmtNum(n) { if (!n) return '0'; if (n >= 1000000) return (n/1000000).toFixed(1)+'M'; if (n >= 1000) return (n/1000).toFixed(1)+'K'; return n.toString(); }
+function escHtml(str) { if (!str) return ''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+document.getElementById('videoUrl').addEventListener('keydown', e => { if (e.key === 'Enter') analyzeVideo(); });
+</script>
+</body>
+</html>
