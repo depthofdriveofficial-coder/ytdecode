@@ -6,20 +6,13 @@ import json
 import urllib.request
 import urllib.parse
 import re
-from datetime import date, timedelta
+from datetime import date
 
 app = FastAPI()
-app.add_middleware(GZipMiddleware, minimum_size=500)  # faster page loads = better SEO/Core Web Vitals
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 SITE_URL = "https://ytdecode.vercel.app"
-
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
-if not YOUTUBE_API_KEY:
-    # No hardcoded fallback key on purpose: a key baked into source code
-    # gets exposed the moment this repo/function is public on GitHub/Vercel.
-    # Set YOUTUBE_API_KEY in Vercel → Project Settings → Environment Variables.
-    raise RuntimeError("YOUTUBE_API_KEY environment variable is not set.")
-
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "AIzaSyD7sjR2lA7ciJ-r0c9-xMyi-Cqw1yITUrg")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def youtube_request(endpoint, params):
@@ -38,7 +31,7 @@ def get_transcript(video_id):
         from youtube_transcript_api import YouTubeTranscriptApi
         transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
         return ' '.join([t['text'] for t in transcript_list])
-    except Exception as e:
+    except Exception:
         return None
 
 def format_duration(iso_duration):
@@ -62,11 +55,8 @@ def home():
     path = os.path.join(BASE_DIR, "index.html")
     with open(path, "r", encoding="utf-8") as f:
         html = f.read()
-    # Edge-cache the HTML on Vercel's CDN; revalidate in the background.
-    # Improves page speed for repeat/global visitors (a ranking signal).
     headers = {"Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400"}
     return HTMLResponse(content=html, headers=headers)
-
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots_txt():
@@ -76,7 +66,6 @@ def robots_txt():
         f"Sitemap: {SITE_URL}/sitemap.xml\n"
     )
     return PlainTextResponse(content=content, headers={"Cache-Control": "public, max-age=86400"})
-
 
 @app.get("/sitemap.xml")
 def sitemap_xml():
@@ -94,7 +83,7 @@ def sitemap_xml():
     parts.append("</urlset>")
     xml = "\n".join(parts)
     return Response(content=xml, media_type="application/xml",
-                     headers={"Cache-Control": "public, max-age=86400"})
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 @app.post("/api/analyze")
 async def analyze(request: Request):
@@ -107,7 +96,6 @@ async def analyze(request: Request):
     if not video_id:
         raise HTTPException(status_code=400, detail="Video ID is required.")
 
-    # Get video details from YouTube API
     data = youtube_request("videos", {
         "part": "snippet,statistics,contentDetails",
         "id": video_id
@@ -121,7 +109,6 @@ async def analyze(request: Request):
     stats = item.get("statistics", {})
     content = item.get("contentDetails", {})
 
-    # Thumbnails
     thumbs_raw = snippet.get("thumbnails", {})
     thumbnails = []
     quality_map = {
@@ -140,7 +127,6 @@ async def analyze(request: Request):
                 "height": thumbs_raw[key].get("height", h)
             })
 
-    # Transcript
     transcript = get_transcript(video_id)
 
     return {
