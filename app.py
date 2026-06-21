@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.middleware.gzip import GZipMiddleware
 import os
 import json
 import urllib.request
@@ -9,22 +8,29 @@ import re
 from datetime import date
 
 app = FastAPI()
-app.add_middleware(GZipMiddleware, minimum_size=500)
 
 SITE_URL = "https://ytdecode.vercel.app"
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def youtube_request(endpoint, params):
+    if not YOUTUBE_API_KEY:
+        raise HTTPException(status_code=500, detail="YouTube API key not configured.")
     params['key'] = YOUTUBE_API_KEY
     query = urllib.parse.urlencode(params)
     url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{query}"
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "Referer": SITE_URL
+    })
     try:
-        with urllib.request.urlopen(req, timeout=10) as res:
+        with urllib.request.urlopen(req, timeout=15) as res:
             return json.loads(res.read())
     except urllib.error.HTTPError as e:
-        raise HTTPException(status_code=e.code, detail=f"YouTube API error: {e.read().decode()}")
+        error_body = e.read().decode()
+        raise HTTPException(status_code=e.code, detail=f"YouTube API error: {error_body}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
 def get_transcript(video_id):
     try:
@@ -55,8 +61,7 @@ def home():
     path = os.path.join(BASE_DIR, "index.html")
     with open(path, "r", encoding="utf-8") as f:
         html = f.read()
-    headers = {"Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400"}
-    return HTMLResponse(content=html, headers=headers)
+    return HTMLResponse(content=html)
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots_txt():
@@ -65,25 +70,16 @@ def robots_txt():
         "Allow: /\n\n"
         f"Sitemap: {SITE_URL}/sitemap.xml\n"
     )
-    return PlainTextResponse(content=content, headers={"Cache-Control": "public, max-age=86400"})
+    return PlainTextResponse(content=content)
 
 @app.get("/sitemap.xml")
 def sitemap_xml():
     today = date.today().isoformat()
-    urls = [
-        {"loc": f"{SITE_URL}/", "lastmod": today, "changefreq": "weekly", "priority": "1.0"},
-    ]
-    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
-             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for u in urls:
-        parts.append(
-            f"  <url><loc>{u['loc']}</loc><lastmod>{u['lastmod']}</lastmod>"
-            f"<changefreq>{u['changefreq']}</changefreq><priority>{u['priority']}</priority></url>"
-        )
-    parts.append("</urlset>")
-    xml = "\n".join(parts)
-    return Response(content=xml, media_type="application/xml",
-                    headers={"Cache-Control": "public, max-age=86400"})
+    xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{SITE_URL}/</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+</urlset>'''
+    return Response(content=xml, media_type="application/xml")
 
 @app.post("/api/analyze")
 async def analyze(request: Request):
