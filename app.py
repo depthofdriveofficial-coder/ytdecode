@@ -12,7 +12,7 @@ app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 SITE_URL = "https://ytdecode.vercel.app"
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "AIzaSyD7sjR2lA7ciJ-r0c9-xMyi-Cqw1yITUrg")
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def youtube_request(endpoint, params):
