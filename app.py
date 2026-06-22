@@ -10,25 +10,26 @@ from datetime import date
 app = FastAPI()
 
 SITE_URL = "https://ytdecode.vercel.app"
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
+RAPIDAPI_HOST = "youtube-v3-lite.p.rapidapi.com"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def youtube_request(endpoint, params):
-    if not YOUTUBE_API_KEY:
-        raise HTTPException(status_code=500, detail="YouTube API key not configured.")
-    params['key'] = YOUTUBE_API_KEY
+def rapidapi_request(endpoint, params):
+    if not RAPIDAPI_KEY:
+        raise HTTPException(status_code=500, detail="API key not configured.")
     query = urllib.parse.urlencode(params)
-    url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{query}"
+    url = f"https://{RAPIDAPI_HOST}/{endpoint}?{query}"
     req = urllib.request.Request(url, headers={
-        "Accept": "application/json",
-        "Referer": SITE_URL
+        "Content-Type": "application/json",
+        "x-rapidapi-host": RAPIDAPI_HOST,
+        "x-rapidapi-key": RAPIDAPI_KEY
     })
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             return json.loads(res.read())
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()
-        raise HTTPException(status_code=e.code, detail=f"YouTube API error: {error_body}")
+        raise HTTPException(status_code=e.code, detail=f"API error: {error_body}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
@@ -38,7 +39,13 @@ def get_transcript(video_id):
         transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
         return ' '.join([t['text'] for t in transcript_list])
     except Exception:
-        return None
+        try:
+            from youtube_transcript_api import YouTubeTranscriptApi
+            transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript = transcripts.find_generated_transcript(['en', 'ur', 'hi'])
+            return ' '.join([t['text'] for t in transcript.fetch()])
+        except Exception:
+            return None
 
 def format_duration(iso_duration):
     match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', iso_duration or '')
@@ -60,17 +67,13 @@ def format_date(date_str):
 def home():
     path = os.path.join(BASE_DIR, "index.html")
     with open(path, "r", encoding="utf-8") as f:
-        html = f.read()
-    return HTMLResponse(content=html)
+        return HTMLResponse(content=f.read())
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots_txt():
-    content = (
-        "User-agent: *\n"
-        "Allow: /\n\n"
-        f"Sitemap: {SITE_URL}/sitemap.xml\n"
+    return PlainTextResponse(
+        f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n"
     )
-    return PlainTextResponse(content=content)
 
 @app.get("/sitemap.xml")
 def sitemap_xml():
@@ -92,19 +95,22 @@ async def analyze(request: Request):
     if not video_id:
         raise HTTPException(status_code=400, detail="Video ID is required.")
 
-    data = youtube_request("videos", {
-        "part": "snippet,statistics,contentDetails",
-        "id": video_id
+    # Get video details from RapidAPI
+    data = rapidapi_request("videos", {
+        "id": video_id,
+        "part": "snippet,contentDetails,statistics"
     })
 
-    if not data.get("items"):
+    items = data.get("items", [])
+    if not items:
         raise HTTPException(status_code=404, detail="Video not found. Please check the URL.")
 
-    item = data["items"][0]
+    item = items[0]
     snippet = item.get("snippet", {})
     stats = item.get("statistics", {})
     content = item.get("contentDetails", {})
 
+    # Thumbnails
     thumbs_raw = snippet.get("thumbnails", {})
     thumbnails = []
     quality_map = {
@@ -123,6 +129,7 @@ async def analyze(request: Request):
                 "height": thumbs_raw[key].get("height", h)
             })
 
+    # Transcript
     transcript = get_transcript(video_id)
 
     return {
@@ -140,3 +147,4 @@ async def analyze(request: Request):
         "thumbnails": thumbnails,
         "transcript": transcript or "Transcript not available for this video (captions may be disabled).",
     }
+
