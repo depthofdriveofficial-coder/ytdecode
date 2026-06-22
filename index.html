@@ -483,9 +483,12 @@
 let videoData = {};
 
 function extractVideoId(url) {
+  url = url.trim();
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/shorts\/([^&\n?#]+)/
+    /(?:youtube\.com\/watch\?v=)([^&\n?#]+)/,
+    /(?:youtu\.be\/)([^&\n?#?]+)/,
+    /(?:youtube\.com\/embed\/)([^&\n?#]+)/,
+    /(?:youtube\.com\/shorts\/)([^&\n?#]+)/
   ];
   for (const p of patterns) {
     const m = url.match(p);
