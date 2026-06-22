@@ -3,65 +3,150 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 import os
 import json
 import urllib.request
-import urllib.parse
 import re
 from datetime import date
 
 app = FastAPI()
 
 SITE_URL = "https://ytdecode.vercel.app"
-RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
-RAPIDAPI_HOST = "youtube-v3-lite.p.rapidapi.com"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def rapidapi_request(endpoint, params):
-    if not RAPIDAPI_KEY:
-        raise HTTPException(status_code=500, detail="API key not configured.")
-    query = urllib.parse.urlencode(params)
-    url = f"https://{RAPIDAPI_HOST}/{endpoint}?{query}"
-    req = urllib.request.Request(url, headers={
-        "Content-Type": "application/json",
-        "x-rapidapi-host": RAPIDAPI_HOST,
-        "x-rapidapi-key": RAPIDAPI_KEY
-    })
-    try:
-        with urllib.request.urlopen(req, timeout=15) as res:
-            return json.loads(res.read())
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        raise HTTPException(status_code=e.code, detail=f"API error: {error_body}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
 def get_transcript(video_id):
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-        return ' '.join([t['text'] for t in transcript_list])
-    except Exception:
+        # Try English first
         try:
-            from youtube_transcript_api import YouTubeTranscriptApi
-            transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = transcripts.find_generated_transcript(['en', 'ur', 'hi'])
-            return ' '.join([t['text'] for t in transcript.fetch()])
-        except Exception:
-            return None
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+            return ' '.join([t['text'] for t in transcript_list])
+        except:
+            pass
+        # Try any available language
+        transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+        for transcript in transcripts:
+            try:
+                data = transcript.fetch()
+                return ' '.join([t['text'] for t in data])
+            except:
+                continue
+        return None
+    except Exception as e:
+        return None
 
-def format_duration(iso_duration):
-    match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', iso_duration or '')
-    if not match:
-        return 'N/A'
-    h, m, s = match.groups()
-    parts = []
-    if h: parts.append(f"{h}h")
-    if m: parts.append(f"{m}m")
-    if s: parts.append(f"{s}s")
-    return ' '.join(parts) or 'N/A'
+def get_video_info(video_id):
+    """Get title and other info by fetching YouTube page"""
+    try:
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        })
+        with urllib.request.urlopen(req, timeout=10) as res:
+            html = res.read().decode('utf-8', errors='ignore')
 
-def format_date(date_str):
-    if not date_str:
-        return 'N/A'
-    return date_str[:10]
+        # Extract title
+        title = ""
+        title_match = re.search(r'"title":"([^"]+)"', html)
+        if title_match:
+            title = title_match.group(1).encode().decode('unicode_escape') if '\\u' in title_match.group(1) else title_match.group(1)
+
+        if not title:
+            title_match = re.search(r'<title>(.+?) - YouTube</title>', html)
+            if title_match:
+                title = title_match.group(1)
+
+        # Extract description
+        description = ""
+        desc_match = re.search(r'"shortDescription":"((?:[^"\\]|\\.)*)\"', html)
+        if desc_match:
+            desc_raw = desc_match.group(1)
+            description = desc_raw.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\')
+
+        # Extract view count
+        views = 0
+        views_match = re.search(r'"viewCount":"(\d+)"', html)
+        if views_match:
+            views = int(views_match.group(1))
+
+        # Extract channel name
+        channel = ""
+        channel_match = re.search(r'"channelName":"([^"]+)"', html)
+        if not channel_match:
+            channel_match = re.search(r'"ownerChannelName":"([^"]+)"', html)
+        if channel_match:
+            channel = channel_match.group(1)
+
+        # Extract publish date
+        published = ""
+        date_match = re.search(r'"publishDate":"([^"]+)"', html)
+        if date_match:
+            published = date_match.group(1)[:10]
+
+        # Extract tags
+        tags = []
+        tags_match = re.search(r'"keywords":\[([^\]]+)\]', html)
+        if tags_match:
+            tags_str = tags_match.group(1)
+            tags = re.findall(r'"([^"]+)"', tags_str)
+
+        # Extract duration
+        duration = ""
+        dur_match = re.search(r'"lengthSeconds":"(\d+)"', html)
+        if dur_match:
+            secs = int(dur_match.group(1))
+            h = secs // 3600
+            m = (secs % 3600) // 60
+            s = secs % 60
+            if h:
+                duration = f"{h}h {m}m {s}s"
+            else:
+                duration = f"{m}m {s}s"
+
+        # Extract likes
+        likes = 0
+        likes_match = re.search(r'"label":"([\d,]+) likes"', html)
+        if likes_match:
+            likes = int(likes_match.group(1).replace(',', ''))
+
+        return {
+            "title": title or "Title not available",
+            "description": description or "",
+            "views": views,
+            "likes": likes,
+            "channel": channel or "",
+            "published": published or "",
+            "duration": duration or "",
+            "tags": tags,
+        }
+    except Exception as e:
+        return {
+            "title": "Title not available",
+            "description": "",
+            "views": 0,
+            "likes": 0,
+            "channel": "",
+            "published": "",
+            "duration": "",
+            "tags": [],
+        }
+
+def get_thumbnails(video_id):
+    thumbnails = []
+    quality_map = [
+        ("maxresdefault", "Max Resolution", 1280, 720),
+        ("sddefault", "Standard", 640, 480),
+        ("hqdefault", "High", 480, 360),
+        ("mqdefault", "Medium", 320, 180),
+        ("default", "Default", 120, 90),
+    ]
+    for filename, label, w, h in quality_map:
+        url = f"https://i.ytimg.com/vi/{video_id}/{filename}.jpg"
+        thumbnails.append({
+            "quality": label,
+            "url": url,
+            "width": w,
+            "height": h
+        })
+    return thumbnails
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -95,56 +180,28 @@ async def analyze(request: Request):
     if not video_id:
         raise HTTPException(status_code=400, detail="Video ID is required.")
 
-    # Get video details from RapidAPI
-    data = rapidapi_request("videos", {
-        "id": video_id,
-        "part": "snippet,contentDetails,statistics"
-    })
+    # Get video info by scraping YouTube page
+    info = get_video_info(video_id)
 
-    items = data.get("items", [])
-    if not items:
-        raise HTTPException(status_code=404, detail="Video not found. Please check the URL.")
-
-    item = items[0]
-    snippet = item.get("snippet", {})
-    stats = item.get("statistics", {})
-    content = item.get("contentDetails", {})
-
-    # Thumbnails
-    thumbs_raw = snippet.get("thumbnails", {})
-    thumbnails = []
-    quality_map = {
-        "maxres": ("Max Resolution", 1280, 720),
-        "standard": ("Standard", 640, 480),
-        "high": ("High", 480, 360),
-        "medium": ("Medium", 320, 180),
-        "default": ("Default", 120, 90),
-    }
-    for key, (label, w, h) in quality_map.items():
-        if key in thumbs_raw:
-            thumbnails.append({
-                "quality": label,
-                "url": thumbs_raw[key]["url"],
-                "width": thumbs_raw[key].get("width", w),
-                "height": thumbs_raw[key].get("height", h)
-            })
-
-    # Transcript
+    # Get transcript
     transcript = get_transcript(video_id)
+
+    # Get thumbnails
+    thumbnails = get_thumbnails(video_id)
+    thumbnail_url = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
 
     return {
         "video_id": video_id,
-        "title": snippet.get("title", ""),
-        "description": snippet.get("description", ""),
-        "tags": snippet.get("tags", []),
-        "views": int(stats.get("viewCount", 0)),
-        "likes": int(stats.get("likeCount", 0)),
-        "comments": int(stats.get("commentCount", 0)),
-        "published": format_date(snippet.get("publishedAt")),
-        "duration": format_duration(content.get("duration")),
-        "channel": snippet.get("channelTitle", ""),
-        "thumbnail_url": thumbs_raw.get("high", {}).get("url", ""),
+        "title": info["title"],
+        "description": info["description"],
+        "tags": info["tags"],
+        "views": info["views"],
+        "likes": info["likes"],
+        "comments": 0,
+        "published": info["published"],
+        "duration": info["duration"],
+        "channel": info["channel"],
+        "thumbnail_url": thumbnail_url,
         "thumbnails": thumbnails,
         "transcript": transcript or "Transcript not available for this video (captions may be disabled).",
     }
-
